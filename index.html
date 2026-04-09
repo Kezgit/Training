@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Training">
+<title>Training Plan</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f2f2f7;
+    --surface: #ffffff;
+    --text: #1c1c1e;
+    --subtext: #6c6c70;
+    --border: rgba(0,0,0,0.08);
+    --pill-bg: #f2f2f7;
+    --pill-text: #3a3a3c;
+    --cardio-bg: rgba(0,0,0,0.10);
+    --cardio-text: #ffffff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --surface: #1c1c1e;
+      --text: #ffffff;
+      --subtext: #98989f;
+      --border: rgba(255,255,255,0.08);
+      --pill-bg: #2c2c2e;
+      --pill-text: #ebebf5cc;
+      --cardio-bg: rgba(255,255,255,0.15);
+      --cardio-text: #ffffff;
+    }
+  }
+
+  body {
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    padding: env(safe-area-inset-top, 20px) 0 env(safe-area-inset-bottom, 20px);
+    min-height: 100dvh;
+  }
+
+  header {
+    padding: 20px 20px 12px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  header span {
+    font-size: 14px;
+    color: var(--subtext);
+  }
+
+  .days { padding: 0 16px 32px; display: flex; flex-direction: column; gap: 10px; }
+
+  .day-card {
+    background: var(--surface);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .day-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    gap: 12px;
+  }
+
+  .day-dot {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .day-dot .dname {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    opacity: 0.85;
+  }
+
+  .day-dot .dtype {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    margin-top: 2px;
+    opacity: 0.75;
+  }
+
+  .day-info { flex: 1; }
+
+  .day-info .focus-type {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .day-info .focus-muscles {
+    font-size: 13px;
+    color: var(--subtext);
+    margin-top: 1px;
+  }
+
+  .chevron {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+    opacity: 0.3;
+  }
+
+  .day-card.open .chevron { transform: rotate(180deg); }
+
+  .day-body {
+    display: none;
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .day-card.open .day-body { display: block; }
+
+  .cardio-row {
+    padding: 10px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+
+  .cardio-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .cardio-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .exercises {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .ex-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .ex-name {
+    font-size: 14px;
+    color: var(--text);
+    flex: 1;
+  }
+
+  .ex-sets {
+    font-size: 12px;
+    color: var(--subtext);
+    background: var(--pill-bg);
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rest-label {
+    font-size: 14px;
+    color: var(--subtext);
+    font-style: italic;
+    padding: 8px 0 4px;
+  }
+
+  .today-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: #FF9F0A;
+    color: #fff;
+    border-radius: 999px;
+    padding: 2px 7px;
+  }
+
+  .c-push   { background: #185FA5; color: #E6F1FB; }
+  .c-lower  { background: #3B6D11; color: #EAF3DE; }
+  .c-cardio { background: #0F6E56; color: #E1F5EE; }
+  .c-pull   { background: #3C3489; color: #EEEDFE; }
+  .c-hinge  { background: #993C1D; color: #FAECE7; }
+  .c-rest   { background: #e0e0e5; color: #6c6c70; }
+
+  @media (prefers-color-scheme: dark) {
+    .c-push   { background: #0C447C; color: #B5D4F4; }
+    .c-lower  { background: #27500A; color: #C0DD97; }
+    .c-cardio { background: #085041; color: #9FE1CB; }
+    .c-pull   { background: #26215C; color: #CECBF6; }
+    .c-hinge  { background: #712B13; color: #F5C4B3; }
+    .c-rest   { background: #2c2c2e; color: #6c6c70; }
+  }
+
+  .dot-push   { background: #185FA5; }
+  .dot-lower  { background: #3B6D11; }
+  .dot-cardio { background: #0F6E56; }
+  .dot-pull   { background: #3C3489; }
+  .dot-hinge  { background: #993C1D; }
+  @media (prefers-color-scheme: dark) {
+    .dot-push   { background: #378ADD; }
+    .dot-lower  { background: #639922; }
+    .dot-cardio { background: #1D9E75; }
+    .dot-pull   { background: #7F77DD; }
+    .dot-hinge  { background: #D85A30; }
+  }
+
+  .focus-push   { color: #185FA5; }
+  .focus-lower  { color: #3B6D11; }
+  .focus-cardio { color: #0F6E56; }
+  .focus-pull   { color: #3C3489; }
+  .focus-hinge  { color: #993C1D; }
+  @media (prefers-color-scheme: dark) {
+    .focus-push   { color: #378ADD; }
+    .focus-lower  { color: #639922; }
+    .focus-cardio { color: #1D9E75; }
+    .focus-pull   { color: #7F77DD; }
+    .focus-hinge  { color: #D85A30; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Training</h1>
+  <span>5 days · 45 min</span>
+</header>
+
+<div class="days">
+
+  <div class="day-card" data-day="1" id="mon">
+    <div class="day-header" onclick="toggle(this)">
+      <div class="day-dot c-push">
+        <span class="dname">MON</span>
+        <span class="dtype">PUSH</span>
+      </div>
+      <div class="day-info">
+        <div class="focus-type focus-push">Push + Core</div>
+        <div class="focus-muscles">Chest · Shoulders · Triceps</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="day-body">
+      <div class="cardio-row">
+        <div class="cardio-dot dot-push"></div>
+        <span class="cardio-label">15 min — treadmill stamina routine</span>
+      </div>
+      <div class="exercises">
+        <div class="ex-item"><span class="ex-name">DB bench press</span><span class="ex-sets">3 × 10–12</span></div>
+        <div class="ex-item"><span class="ex-name">DB shoulder press</span><span class="ex-sets">3 × 10–12</span></div>
+        <div class="ex-item"><span class="ex-name">Cable chest fly</span><span class="ex-sets">3 × 12–15</span></div>
+        <div class="ex-item"><span class="ex-name">Tricep pushdown</span><span class="ex-sets">3 × 12–15</span></div>
+        <div class="ex-item"><span class="ex-name">Plank hold</span><span class="ex-sets">3 × 45s</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="day-card" data-day="2" id="tue">
+    <div class="day-header" onclick="toggle(this)">
+      <div class="day-dot c-lower">
+        <span class="dname">TUE</span>
+        <span class="dtype">LOWER</span>
+      </div>
+      <div class="day-info">
+        <div class="focus-type focus-lower">Lower — Quad</div>
+        <div class="focus-muscles">Quads · Calves · Stability</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="day-body">
+      <div class="cardio-row">
+        <div class="cardio-dot dot-lower"></div>
+        <span class="cardio-label">15 min — treadmill leg strength routine</span>
+      </div>
+      <div class="exercises">
+        <div class="ex-item"><span class="ex-name">KB goblet squat</span><span class="ex-sets">3 × 12</span></div>
+        <div class="ex-item"><span class="ex-name">Leg press</span><span class="ex-sets">3 × 12–15</span></div>
+        <div class="ex-item"><span class="ex-name">Bulgarian split squat</span><span class="ex-sets">3 × 8 ea</span></div>
+        <div class="ex-item"><span class="ex-name">Calf raises</span><span class="ex-sets">3 × 20</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="day-card" data-day="3" id="wed">
+    <div class="day-header" onclick="toggle(this)">
+      <div class="day-dot c-cardio">
+        <span class="dname">WED</span>
+        <span class="dtype">CARDIO</span>
+      </div>
+      <div class="day-info">
+        <div class="focus-type focus-cardio">Cardio Day</div>
+        <div class="focus-muscles">Aerobic base · Active recovery</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="day-body">
+      <div class="cardio-row">
+        <div class="cardio-dot dot-cardio"></div>
+        <span class="cardio-label">30 min — spin bike, Zone 2 pace</span>
+      </div>
+      <div class="exercises">
+        <div class="ex-item"><span class="ex-name">Stretch + mobility</span><span class="ex-sets">10–15 min</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="day-card" data-day="4" id="thu">
+    <div class="day-header" onclick="toggle(this)">
+      <div class="day-dot c-pull">
+        <span class="dname">THU</span>
+        <span class="dtype">PULL</span>
+      </div>
+      <div class="day-info">
+        <div class="focus-type focus-pull">Pull + Core</div>
+        <div class="focus-muscles">Back · Biceps · Rear delts</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="day-body">
+      <div class="cardio-row">
+        <div class="cardio-dot dot-pull"></div>
+        <span class="cardio-label">15 min — treadmill stamina routine</span>
+      </div>
+      <div class="exercises">
+        <div class="ex-item"><span class="ex-name">Pull-ups</span><span class="ex-sets">3 × 5–7</span></div>
+        <div class="ex-item"><span class="ex-name">Lat pulldown</span><span class="ex-sets">3 × 10–12</span></div>
+        <div class="ex-item"><span class="ex-name">Cable seated row</span><span class="ex-sets">3 × 10–12</span></div>
+        <div class="ex-item"><span class="ex-name">Face pulls</span><span class="ex-sets">3 × 15</span></div>
+        <div class="ex-item"><span class="ex-name">Hanging leg raises</span><span class="ex-sets">3 × 10</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="day-card" data-day="5" id="fri">
+    <div class="day-header" onclick="toggle(this)">
+      <div class="day-dot c-hinge">
+        <span class="dname">FRI</span>
+        <span class="dtype">LOWER</span>
+      </div>
+      <div class="day-info">
+        <div class="focus-type focus-hinge">Lower — Hinge</div>
+        <div class="focus-muscles">Hamstrings · Glutes · Core</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="day-body">
+      <div class="cardio-row">
+        <div class="cardio-dot dot-hinge"></div>
+        <span class="cardio-label">15 min — treadmill stamina routine</span>
+      </div>
+      <div class="exercises">
+        <div class="ex-item"><span class="ex-name">DB Romanian deadlift</span><span class="ex-sets">3 × 10–12</span></div>
+        <div class="ex-item"><span class="ex-name">KB swings</span><span class="ex-sets">3 × 15</span></div>
+        <div class="ex-item"><span class="ex-name">Calf raises</span><span class="ex-sets">3 × 20</span></div>
+        <div class="ex-item"><span class="ex-name">Leg raises</span><span class="ex-sets">3 × 10–12</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="day-card" data-day="6" id="sat">
+    <div class="day-header" onclick="toggle(this)">
+      <div class="day-dot c-rest">
+        <span class="dname">SAT</span>
+        <span class="dtype">REST</span>
+      </div>
+      <div class="day-info">
+        <div class="focus-type" style="color:var(--subtext)">Optional</div>
+        <div class="focus-muscles">Easy outdoor run or full rest</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="day-body">
+      <div class="rest-label">Zone 2 run · 30–45 min · or do nothing.</div>
+    </div>
+  </div>
+
+  <div class="day-card" data-day="0" id="sun">
+    <div class="day-header" onclick="toggle(this)">
+      <div class="day-dot c-rest">
+        <span class="dname">SUN</span>
+        <span class="dtype">REST</span>
+      </div>
+      <div class="day-info">
+        <div class="focus-type" style="color:var(--subtext)">Full rest</div>
+        <div class="focus-muscles">Recover · walk · do nothing</div>
+      </div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="day-body">
+      <div class="rest-label">Full rest day. No guilt.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function toggle(header) {
+    const card = header.closest('.day-card');
+    card.classList.toggle('open');
+  }
+
+  function openToday() {
+    const day = new Date().getDay();
+    const card = document.querySelector(`.day-card[data-day="${day}"]`);
+    if (card) {
+      card.classList.add('open');
+      const badge = document.createElement('span');
+      badge.className = 'today-badge';
+      badge.textContent = 'Today';
+      card.querySelector('.day-info').appendChild(badge);
+    }
+  }
+
+  openToday();
+</script>
+</body>
+</html>
