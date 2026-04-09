@@ -4,448 +4,988 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Training">
-<title>Training Plan</title>
+<title>Training</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-  :root {
-    --bg: #f2f2f7;
-    --surface: #ffffff;
-    --text: #1c1c1e;
-    --subtext: #6c6c70;
-    --border: rgba(0,0,0,0.08);
-    --pill-bg: #f2f2f7;
-    --pill-text: #3a3a3c;
-    --cardio-bg: rgba(0,0,0,0.10);
-    --cardio-text: #ffffff;
-  }
+:root{
+  --bg:#030303;
+  --surface:#080808;
+  --text:#f0f0f0;
+  --sub:#484848;
+  --dim:#222;
+  --safe-top:env(safe-area-inset-top,44px);
+  --safe-bot:env(safe-area-inset-bottom,20px);
+  --mono:'Space Mono','Courier New',monospace;
+  --digit:'Orbitron','Courier New',monospace;
+  --accent:#ffffff;
+}
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #000000;
-      --surface: #1c1c1e;
-      --text: #ffffff;
-      --subtext: #98989f;
-      --border: rgba(255,255,255,0.08);
-      --pill-bg: #2c2c2e;
-      --pill-text: #ebebf5cc;
-      --cardio-bg: rgba(255,255,255,0.15);
-      --cardio-text: #ffffff;
-    }
-  }
+body{
+  background:var(--bg);
+  font-family:var(--mono);
+  color:var(--text);
+  min-height:100dvh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
 
-  body {
-    background: var(--bg);
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-    padding: env(safe-area-inset-top, 20px) 0 env(safe-area-inset-bottom, 20px);
-    min-height: 100dvh;
-  }
+/* ── TICKER ── */
+.ticker-wrap{
+  overflow:hidden;
+  border-bottom:1px solid #111;
+  padding:7px 0;
+  background:var(--bg);
+}
+.ticker{
+  display:inline-flex;
+  white-space:nowrap;
+  animation:ticker-scroll 28s linear infinite;
+}
+.ticker span{
+  font-size:9px;
+  letter-spacing:0.18em;
+  color:#252525;
+  text-transform:uppercase;
+  padding-right:40px;
+}
+@keyframes ticker-scroll{
+  from{transform:translateX(0)}
+  to{transform:translateX(-50%)}
+}
 
-  header {
-    padding: 20px 20px 12px;
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-  }
+/* ── PLAN VIEW ── */
+#plan-view{
+  padding-top:var(--safe-top);
+  padding-bottom:calc(var(--safe-bot) + 24px);
+}
 
-  header h1 {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--text);
-    letter-spacing: -0.5px;
-  }
+.plan-header{
+  padding:22px 20px 18px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  border-bottom:1px solid #111;
+}
+.plan-title{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:var(--text);
+}
+.plan-meta{
+  font-size:9px;
+  letter-spacing:0.14em;
+  color:var(--sub);
+  text-transform:uppercase;
+}
 
-  header span {
-    font-size: 14px;
-    color: var(--subtext);
-  }
+.days{
+  padding:14px 16px 0;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
 
-  .days { padding: 0 16px 32px; display: flex; flex-direction: column; gap: 10px; }
+.section-label{
+  font-size:9px;
+  color:#252525;
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  padding:10px 2px 4px;
+  font-weight:700;
+}
 
-  .day-card {
-    background: var(--surface);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  }
+/* ── DAY CARD ── */
+.day-card{
+  border:1px solid #141414;
+  border-radius:3px;
+  background:var(--surface);
+  overflow:hidden;
+  position:relative;
+  transition:border-color 0.25s ease;
+}
+.day-card::before{
+  content:'';
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:2px;
+  background:var(--accent);
+  opacity:0.2;
+  transition:opacity 0.25s ease, box-shadow 0.25s ease;
+  z-index:1;
+}
+.day-card.open{
+  border-color:var(--accent);
+}
+.day-card.open::before{
+  opacity:0.9;
+  box-shadow:0 0 8px var(--accent);
+}
+@keyframes card-pulse{
+  0%{box-shadow:0 0 0 1px var(--accent);opacity:1}
+  60%{box-shadow:0 0 16px 1px var(--accent);opacity:0.8}
+  100%{box-shadow:none;opacity:1}
+}
+.day-card.pulse{animation:card-pulse 0.5s ease-out}
 
-  .day-header {
-    display: flex;
-    align-items: center;
-    padding: 14px 16px;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-    gap: 12px;
-  }
+.day-header{
+  display:flex;
+  align-items:center;
+  padding:13px 14px 13px 18px;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+  gap:10px;
+  position:relative;
+  z-index:1;
+}
 
-  .day-dot {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
+.day-tag{
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--accent);
+  width:26px;
+  flex-shrink:0;
+  line-height:1.4;
+}
+.day-tag small{
+  display:block;
+  font-size:7px;
+  letter-spacing:0.1em;
+  color:var(--sub);
+  font-weight:400;
+}
 
-  .day-dot .dname {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    line-height: 1;
-    opacity: 0.85;
-  }
+.day-name{
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  flex:1;
+  color:var(--text);
+  line-height:1.3;
+}
+.day-name small{
+  display:block;
+  font-size:9px;
+  font-weight:400;
+  color:var(--sub);
+  letter-spacing:0.08em;
+  margin-top:1px;
+}
 
-  .day-dot .dtype {
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    margin-top: 2px;
-    opacity: 0.75;
-  }
+.today-tag{
+  font-size:8px;
+  font-weight:700;
+  letter-spacing:0.14em;
+  color:#FF9F0A;
+  text-transform:uppercase;
+}
+.today-tag::before{content:'[ '}
+.today-tag::after{content:' ]'}
 
-  .day-info { flex: 1; }
+.chevron{
+  width:14px;height:14px;
+  flex-shrink:0;
+  transition:transform 0.3s ease;
+  opacity:0.2;
+  stroke:var(--text);
+}
+.day-card.open .chevron{
+  transform:rotate(180deg);
+  opacity:0.5;
+}
 
-  .day-info .focus-type {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
+/* ── DAY BODY ── */
+.day-body{
+  height:0;
+  overflow:hidden;
+  transition:height 0.32s cubic-bezier(0.4,0,0.2,1);
+  border-top:0px solid transparent;
+}
+.day-card.open .day-body{
+  border-top:1px solid #111;
+}
 
-  .day-info .focus-muscles {
-    font-size: 13px;
-    color: var(--subtext);
-    margin-top: 1px;
-  }
+.body-inner{
+  padding:14px 14px 14px 18px;
+}
 
-  .chevron {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-    transition: transform 0.25s ease;
-    opacity: 0.3;
-  }
+.cardio-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding-bottom:12px;
+  margin-bottom:12px;
+  border-bottom:1px solid var(--dim);
+}
+.cardio-pip{
+  width:2px;height:14px;
+  background:var(--accent);
+  flex-shrink:0;
+}
+.cardio-label{
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--text);
+}
 
-  .day-card.open .chevron { transform: rotate(180deg); }
+.exercises{
+  display:flex;
+  flex-direction:column;
+  margin-bottom:14px;
+}
+.ex-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:7px 0;
+  border-bottom:1px solid #0f0f0f;
+}
+.ex-item:last-child{border-bottom:none}
+.ex-name{
+  font-size:11px;
+  letter-spacing:0.07em;
+  color:#999;
+  text-transform:uppercase;
+}
+.ex-sets{
+  font-size:10px;
+  color:var(--sub);
+  letter-spacing:0.06em;
+  white-space:nowrap;
+}
 
-  .day-body {
-    display: none;
-    padding: 0 16px 16px;
-    border-top: 1px solid var(--border);
-  }
+.start-btn{
+  width:100%;
+  padding:12px;
+  background:transparent;
+  border:1px solid var(--accent);
+  color:var(--accent);
+  font-family:var(--mono);
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  border-radius:2px;
+  transition:background 0.12s ease,color 0.12s ease;
+}
+.start-btn:active{
+  background:var(--accent);
+  color:#000;
+}
 
-  .day-card.open .day-body { display: block; }
+.rest-note{
+  font-size:10px;
+  color:var(--sub);
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  padding:6px 0 2px;
+}
 
-  .cardio-row {
-    padding: 10px 0 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 10px;
-  }
+/* ── SESSION VIEW ── */
+#session-view{
+  display:none;
+  min-height:100dvh;
+  flex-direction:column;
+  background:#000;
+  position:relative;
+}
+#session-view.active{display:flex}
 
-  .cardio-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+/* scan lines */
+#session-view::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent 0px,transparent 3px,
+    rgba(0,0,0,0.1) 3px,rgba(0,0,0,0.1) 4px
+  );
+  pointer-events:none;
+  z-index:0;
+}
 
-  .cardio-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-  }
+.sess-header{
+  padding:calc(var(--safe-top) + 10px) 20px 14px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  border-bottom:1px solid #0f0f0f;
+  position:relative;z-index:1;
+}
+.sess-name{
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  color:var(--accent);
+}
+.sess-name-sub{
+  font-size:8px;
+  letter-spacing:0.14em;
+  color:var(--sub);
+  text-transform:uppercase;
+  margin-top:3px;
+}
+.sess-total-label{
+  font-size:8px;
+  color:var(--sub);
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  text-align:right;
+  margin-bottom:2px;
+}
+.sess-total-time{
+  font-family:var(--digit);
+  font-size:24px;
+  font-weight:700;
+  color:var(--text);
+  font-variant-numeric:tabular-nums;
+  letter-spacing:0.04em;
+  text-align:right;
+}
 
-  .exercises {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-  }
+/* Main segment */
+.sess-main{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:28px 24px;
+  position:relative;z-index:1;
+  text-align:center;
+}
 
-  .ex-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
+.seg-now{
+  font-size:8px;
+  font-weight:700;
+  letter-spacing:0.24em;
+  text-transform:uppercase;
+  color:var(--accent);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:18px;
+}
+.seg-now::before,.seg-now::after{
+  content:'';
+  display:block;
+  height:1px;
+  width:28px;
+  background:var(--accent);
+  opacity:0.4;
+}
 
-  .ex-name {
-    font-size: 14px;
-    color: var(--text);
-    flex: 1;
-  }
+.seg-name{
+  font-size:18px;
+  font-weight:700;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--text);
+  line-height:1.2;
+  margin-bottom:6px;
+}
+.seg-detail{
+  font-size:10px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--sub);
+  margin-bottom:28px;
+}
 
-  .ex-sets {
-    font-size: 12px;
-    color: var(--subtext);
-    background: var(--pill-bg);
-    padding: 3px 9px;
-    border-radius: 999px;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
+.seg-timer{
+  font-family:var(--digit);
+  font-size:76px;
+  font-weight:700;
+  color:var(--text);
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-0.02em;
+  line-height:1;
+  margin-bottom:14px;
+  /* glow set dynamically */
+}
 
-  .rest-label {
-    font-size: 14px;
-    color: var(--subtext);
-    font-style: italic;
-    padding: 8px 0 4px;
-  }
+.seg-progress{
+  font-size:9px;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:#2a2a2a;
+}
 
-  .today-badge {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    background: #FF9F0A;
-    color: #fff;
-    border-radius: 999px;
-    padding: 2px 7px;
-  }
+/* Divider rule */
+.rule{
+  height:1px;
+  background:#0f0f0f;
+  margin:0 20px;
+  position:relative;z-index:1;
+}
 
-  .c-push   { background: #185FA5; color: #E6F1FB; }
-  .c-lower  { background: #3B6D11; color: #EAF3DE; }
-  .c-cardio { background: #0F6E56; color: #E1F5EE; }
-  .c-pull   { background: #3C3489; color: #EEEDFE; }
-  .c-hinge  { background: #993C1D; color: #FAECE7; }
-  .c-rest   { background: #e0e0e5; color: #6c6c70; }
+/* Action button */
+.sess-action{
+  padding:14px 20px;
+  position:relative;z-index:1;
+}
+.next-btn{
+  width:100%;
+  padding:15px;
+  background:transparent;
+  border:1px solid #1e1e1e;
+  color:#555;
+  font-family:var(--mono);
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  cursor:pointer;
+  border-radius:2px;
+  -webkit-tap-highlight-color:transparent;
+  transition:all 0.12s ease;
+  position:relative;overflow:hidden;
+}
+.next-btn.last{
+  border-color:var(--accent);
+  color:var(--accent);
+}
+.next-btn:active{background:#111;color:var(--text)}
 
-  @media (prefers-color-scheme: dark) {
-    .c-push   { background: #0C447C; color: #B5D4F4; }
-    .c-lower  { background: #27500A; color: #C0DD97; }
-    .c-cardio { background: #085041; color: #9FE1CB; }
-    .c-pull   { background: #26215C; color: #CECBF6; }
-    .c-hinge  { background: #712B13; color: #F5C4B3; }
-    .c-rest   { background: #2c2c2e; color: #6c6c70; }
-  }
+/* Log */
+.sess-log{
+  margin:0 20px 10px;
+  position:relative;z-index:1;
+}
+.log-header{
+  font-size:8px;
+  font-weight:700;
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  color:#282828;
+  padding:10px 0 6px;
+  border-top:1px solid #0f0f0f;
+}
+.log-list{max-height:150px;overflow-y:auto}
+.log-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:5px 0;
+  border-bottom:1px solid #0a0a0a;
+}
+.log-item:last-child{border-bottom:none}
+.log-name{font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#333}
+.log-time{font-family:var(--digit);font-size:13px;color:#333;font-variant-numeric:tabular-nums}
 
-  .dot-push   { background: #185FA5; }
-  .dot-lower  { background: #3B6D11; }
-  .dot-cardio { background: #0F6E56; }
-  .dot-pull   { background: #3C3489; }
-  .dot-hinge  { background: #993C1D; }
-  @media (prefers-color-scheme: dark) {
-    .dot-push   { background: #378ADD; }
-    .dot-lower  { background: #639922; }
-    .dot-cardio { background: #1D9E75; }
-    .dot-pull   { background: #7F77DD; }
-    .dot-hinge  { background: #D85A30; }
-  }
+/* End / footer */
+.sess-footer{
+  padding:10px 20px calc(var(--safe-bot) + 14px);
+  border-top:1px solid #0f0f0f;
+  position:relative;z-index:1;
+}
+.end-btn{
+  width:100%;padding:12px;
+  background:transparent;
+  border:1px solid #161616;
+  color:#2a2a2a;
+  font-family:var(--mono);
+  font-size:9px;font-weight:700;
+  letter-spacing:0.22em;text-transform:uppercase;
+  cursor:pointer;border-radius:2px;
+  -webkit-tap-highlight-color:transparent;
+  transition:border-color 0.15s,color 0.15s;
+}
+.end-btn:active{border-color:#444;color:#888}
 
-  .focus-push   { color: #185FA5; }
-  .focus-lower  { color: #3B6D11; }
-  .focus-cardio { color: #0F6E56; }
-  .focus-pull   { color: #3C3489; }
-  .focus-hinge  { color: #993C1D; }
-  @media (prefers-color-scheme: dark) {
-    .focus-push   { color: #378ADD; }
-    .focus-lower  { color: #639922; }
-    .focus-cardio { color: #1D9E75; }
-    .focus-pull   { color: #7F77DD; }
-    .focus-hinge  { color: #D85A30; }
-  }
+/* Complete screen */
+.complete-screen{
+  flex:1;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:32px 24px;
+  text-align:center;
+  position:relative;z-index:1;
+}
+.complete-eyebrow{
+  font-size:9px;font-weight:700;
+  letter-spacing:0.24em;text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:16px;
+  display:flex;align-items:center;gap:12px;
+}
+.complete-eyebrow::before,.complete-eyebrow::after{
+  content:'';display:block;height:1px;width:28px;
+  background:var(--accent);opacity:0.4;
+}
+.complete-title{
+  font-size:12px;font-weight:700;
+  letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--text);margin-bottom:4px;
+}
+.complete-time{
+  font-family:var(--digit);font-size:68px;font-weight:700;
+  color:var(--text);font-variant-numeric:tabular-nums;
+  letter-spacing:-0.02em;margin:12px 0 4px;
+}
+.complete-sub{
+  font-size:9px;letter-spacing:0.16em;
+  text-transform:uppercase;color:var(--sub);
+}
+
+/* ── TRANSITIONS ── */
+@keyframes glitch-enter{
+  0%  {opacity:0;transform:translateX(-8px);
+       text-shadow:-2px 0 var(--accent),2px 0 rgba(0,180,255,0.5)}
+  18% {opacity:1;transform:translateX(4px);
+       text-shadow:-2px 0 var(--accent),2px 0 rgba(0,180,255,0.5)}
+  35% {transform:translateX(-2px);text-shadow:none}
+  55% {transform:translateX(1px)}
+  80% {transform:translateX(0)}
+  100%{opacity:1;transform:translateX(0);text-shadow:none}
+}
+.glitch-enter{animation:glitch-enter 0.32s ease-out forwards}
+
+@keyframes glitch-exit{
+  0%  {opacity:1;transform:translateX(0)}
+  30% {opacity:0.4;transform:translateX(4px);
+       text-shadow:2px 0 var(--accent),-2px 0 rgba(0,180,255,0.5)}
+  100%{opacity:0;transform:translateX(-4px)}
+}
+.glitch-exit{animation:glitch-exit 0.18s ease-in forwards}
+
+/* scan flash line */
+.scan-flash{
+  position:fixed;left:0;right:0;
+  height:1px;
+  background:var(--accent);
+  opacity:0;
+  z-index:200;
+  pointer-events:none;
+}
+@keyframes do-scan{
+  0%  {top:0;opacity:0.4}
+  100%{top:100%;opacity:0}
+}
+.scan-flash.active{animation:do-scan 0.4s ease-in forwards}
 </style>
 </head>
 <body>
 
-<header>
-  <h1>Training</h1>
-  <span>5 days · 45 min</span>
-</header>
+<!-- SCAN FLASH ELEMENT -->
+<div class="scan-flash" id="scanFlash"></div>
 
-<div class="days">
-
-  <div class="day-card" data-day="1" id="mon">
-    <div class="day-header" onclick="toggle(this)">
-      <div class="day-dot c-push">
-        <span class="dname">MON</span>
-        <span class="dtype">PUSH</span>
-      </div>
-      <div class="day-info">
-        <div class="focus-type focus-push">Push + Core</div>
-        <div class="focus-muscles">Chest · Shoulders · Triceps</div>
-      </div>
-      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-    <div class="day-body">
-      <div class="cardio-row">
-        <div class="cardio-dot dot-push"></div>
-        <span class="cardio-label">15 min — treadmill stamina routine</span>
-      </div>
-      <div class="exercises">
-        <div class="ex-item"><span class="ex-name">DB bench press</span><span class="ex-sets">3 × 10–12</span></div>
-        <div class="ex-item"><span class="ex-name">DB shoulder press</span><span class="ex-sets">3 × 10–12</span></div>
-        <div class="ex-item"><span class="ex-name">Cable chest fly</span><span class="ex-sets">3 × 12–15</span></div>
-        <div class="ex-item"><span class="ex-name">Tricep pushdown</span><span class="ex-sets">3 × 12–15</span></div>
-        <div class="ex-item"><span class="ex-name">Plank hold</span><span class="ex-sets">3 × 45s</span></div>
-      </div>
+<!-- ═══════════════ PLAN VIEW ═══════════════ -->
+<div id="plan-view">
+  <div class="ticker-wrap">
+    <div class="ticker">
+      <span>TRAINING PROTOCOL — 5 DAYS — 45 MIN —</span>
+      <span>PUSH — LOWER — CARDIO — PULL — HINGE —</span>
+      <span>TRAINING PROTOCOL — 5 DAYS — 45 MIN —</span>
+      <span>PUSH — LOWER — CARDIO — PULL — HINGE —</span>
+      <span>TRAINING PROTOCOL — 5 DAYS — 45 MIN —</span>
+      <span>PUSH — LOWER — CARDIO — PULL — HINGE —</span>
     </div>
   </div>
 
-  <div class="day-card" data-day="2" id="tue">
-    <div class="day-header" onclick="toggle(this)">
-      <div class="day-dot c-lower">
-        <span class="dname">TUE</span>
-        <span class="dtype">LOWER</span>
+  <div class="plan-header">
+    <div class="plan-title">Training</div>
+    <div class="plan-meta">Protocol v1</div>
+  </div>
+
+  <div class="days">
+    <div class="section-label">// Weekdays</div>
+
+    <!-- MON -->
+    <div class="day-card" data-day="1" id="mon" style="--accent:#3D8EF0">
+      <div class="day-header" onclick="toggleCard(this)">
+        <div class="day-tag">Mon<small>Push</small></div>
+        <div class="day-name">Push + Core<small>Chest · Shoulders · Triceps</small></div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
-      <div class="day-info">
-        <div class="focus-type focus-lower">Lower — Quad</div>
-        <div class="focus-muscles">Quads · Calves · Stability</div>
+      <div class="day-body">
+        <div class="body-inner">
+          <div class="cardio-row"><div class="cardio-pip"></div><span class="cardio-label">15 min — treadmill stamina routine</span></div>
+          <div class="exercises">
+            <div class="ex-item"><span class="ex-name">DB bench press</span><span class="ex-sets">3 × 10–12</span></div>
+            <div class="ex-item"><span class="ex-name">DB shoulder press</span><span class="ex-sets">3 × 10–12</span></div>
+            <div class="ex-item"><span class="ex-name">Cable chest fly</span><span class="ex-sets">3 × 12–15</span></div>
+            <div class="ex-item"><span class="ex-name">Tricep pushdown</span><span class="ex-sets">3 × 12–15</span></div>
+            <div class="ex-item"><span class="ex-name">Plank hold</span><span class="ex-sets">3 × 45s</span></div>
+          </div>
+          <button class="start-btn" onclick="startSession(1)">[ Start Session ]</button>
+        </div>
       </div>
-      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
-    <div class="day-body">
-      <div class="cardio-row">
-        <div class="cardio-dot dot-lower"></div>
-        <span class="cardio-label">15 min — treadmill leg strength routine</span>
+
+    <!-- TUE -->
+    <div class="day-card" data-day="2" id="tue" style="--accent:#6DC04E">
+      <div class="day-header" onclick="toggleCard(this)">
+        <div class="day-tag">Tue<small>Lower</small></div>
+        <div class="day-name">Lower — Quad<small>Quads · Calves · Stability</small></div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
-      <div class="exercises">
-        <div class="ex-item"><span class="ex-name">KB goblet squat</span><span class="ex-sets">3 × 12</span></div>
-        <div class="ex-item"><span class="ex-name">Leg press</span><span class="ex-sets">3 × 12–15</span></div>
-        <div class="ex-item"><span class="ex-name">Bulgarian split squat</span><span class="ex-sets">3 × 8 ea</span></div>
-        <div class="ex-item"><span class="ex-name">Calf raises</span><span class="ex-sets">3 × 20</span></div>
+      <div class="day-body">
+        <div class="body-inner">
+          <div class="cardio-row"><div class="cardio-pip"></div><span class="cardio-label">15 min — treadmill leg strength routine</span></div>
+          <div class="exercises">
+            <div class="ex-item"><span class="ex-name">KB goblet squat</span><span class="ex-sets">3 × 12</span></div>
+            <div class="ex-item"><span class="ex-name">Leg press</span><span class="ex-sets">3 × 12–15</span></div>
+            <div class="ex-item"><span class="ex-name">Bulgarian split squat</span><span class="ex-sets">3 × 8 ea</span></div>
+            <div class="ex-item"><span class="ex-name">Calf raises</span><span class="ex-sets">3 × 20</span></div>
+          </div>
+          <button class="start-btn" onclick="startSession(2)">[ Start Session ]</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WED -->
+    <div class="day-card" data-day="3" id="wed" style="--accent:#22C98A">
+      <div class="day-header" onclick="toggleCard(this)">
+        <div class="day-tag">Wed<small>Cardio</small></div>
+        <div class="day-name">Cardio Day<small>Aerobic base · Active recovery</small></div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="day-body">
+        <div class="body-inner">
+          <div class="cardio-row"><div class="cardio-pip"></div><span class="cardio-label">30 min — spin bike, Zone 2 pace</span></div>
+          <div class="exercises">
+            <div class="ex-item"><span class="ex-name">Stretch + mobility</span><span class="ex-sets">10–15 min</span></div>
+          </div>
+          <button class="start-btn" onclick="startSession(3)">[ Start Session ]</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- THU -->
+    <div class="day-card" data-day="4" id="thu" style="--accent:#9B8FFF">
+      <div class="day-header" onclick="toggleCard(this)">
+        <div class="day-tag">Thu<small>Pull</small></div>
+        <div class="day-name">Pull + Core<small>Back · Biceps · Rear delts</small></div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="day-body">
+        <div class="body-inner">
+          <div class="cardio-row"><div class="cardio-pip"></div><span class="cardio-label">15 min — treadmill stamina routine</span></div>
+          <div class="exercises">
+            <div class="ex-item"><span class="ex-name">Pull-ups</span><span class="ex-sets">3 × 5–7</span></div>
+            <div class="ex-item"><span class="ex-name">Lat pulldown</span><span class="ex-sets">3 × 10–12</span></div>
+            <div class="ex-item"><span class="ex-name">Cable seated row</span><span class="ex-sets">3 × 10–12</span></div>
+            <div class="ex-item"><span class="ex-name">Face pulls</span><span class="ex-sets">3 × 15</span></div>
+            <div class="ex-item"><span class="ex-name">Hanging leg raises</span><span class="ex-sets">3 × 10</span></div>
+          </div>
+          <button class="start-btn" onclick="startSession(4)">[ Start Session ]</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FRI -->
+    <div class="day-card" data-day="5" id="fri" style="--accent:#F0804A">
+      <div class="day-header" onclick="toggleCard(this)">
+        <div class="day-tag">Fri<small>Lower</small></div>
+        <div class="day-name">Lower — Hinge<small>Hamstrings · Glutes · Core</small></div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="day-body">
+        <div class="body-inner">
+          <div class="cardio-row"><div class="cardio-pip"></div><span class="cardio-label">15 min — treadmill stamina routine</span></div>
+          <div class="exercises">
+            <div class="ex-item"><span class="ex-name">DB Romanian deadlift</span><span class="ex-sets">3 × 10–12</span></div>
+            <div class="ex-item"><span class="ex-name">KB swings</span><span class="ex-sets">3 × 15</span></div>
+            <div class="ex-item"><span class="ex-name">Calf raises</span><span class="ex-sets">3 × 20</span></div>
+            <div class="ex-item"><span class="ex-name">Leg raises</span><span class="ex-sets">3 × 10–12</span></div>
+          </div>
+          <button class="start-btn" onclick="startSession(5)">[ Start Session ]</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label" style="padding-top:14px">// Weekend</div>
+
+    <div class="day-card" data-day="6" id="sat" style="--accent:#333">
+      <div class="day-header" onclick="toggleCard(this)">
+        <div class="day-tag">Sat<small>Rest</small></div>
+        <div class="day-name" style="color:#555">Optional<small style="color:#333">Easy outdoor run or full rest</small></div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="day-body">
+        <div class="body-inner"><div class="rest-note">Zone 2 — 30–45 min — or do nothing.</div></div>
+      </div>
+    </div>
+
+    <div class="day-card" data-day="0" id="sun" style="--accent:#333">
+      <div class="day-header" onclick="toggleCard(this)">
+        <div class="day-tag">Sun<small>Rest</small></div>
+        <div class="day-name" style="color:#555">Full rest<small style="color:#333">Recover · walk · do nothing</small></div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="day-body">
+        <div class="body-inner"><div class="rest-note">Full rest. No guilt.</div></div>
       </div>
     </div>
   </div>
+</div>
 
-  <div class="day-card" data-day="3" id="wed">
-    <div class="day-header" onclick="toggle(this)">
-      <div class="day-dot c-cardio">
-        <span class="dname">WED</span>
-        <span class="dtype">CARDIO</span>
-      </div>
-      <div class="day-info">
-        <div class="focus-type focus-cardio">Cardio Day</div>
-        <div class="focus-muscles">Aerobic base · Active recovery</div>
-      </div>
-      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+<!-- ═══════════════ SESSION VIEW ═══════════════ -->
+<div id="session-view">
+  <div class="sess-header">
+    <div>
+      <div class="sess-name" id="sess-name">Push + Core</div>
+      <div class="sess-name-sub" id="sess-day">Monday</div>
     </div>
-    <div class="day-body">
-      <div class="cardio-row">
-        <div class="cardio-dot dot-cardio"></div>
-        <span class="cardio-label">30 min — spin bike, Zone 2 pace</span>
-      </div>
-      <div class="exercises">
-        <div class="ex-item"><span class="ex-name">Stretch + mobility</span><span class="ex-sets">10–15 min</span></div>
-      </div>
+    <div>
+      <div class="sess-total-label">Total</div>
+      <div class="sess-total-time" id="sess-total">00:00</div>
     </div>
   </div>
 
-  <div class="day-card" data-day="4" id="thu">
-    <div class="day-header" onclick="toggle(this)">
-      <div class="day-dot c-pull">
-        <span class="dname">THU</span>
-        <span class="dtype">PULL</span>
-      </div>
-      <div class="day-info">
-        <div class="focus-type focus-pull">Pull + Core</div>
-        <div class="focus-muscles">Back · Biceps · Rear delts</div>
-      </div>
-      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-    <div class="day-body">
-      <div class="cardio-row">
-        <div class="cardio-dot dot-pull"></div>
-        <span class="cardio-label">15 min — treadmill stamina routine</span>
-      </div>
-      <div class="exercises">
-        <div class="ex-item"><span class="ex-name">Pull-ups</span><span class="ex-sets">3 × 5–7</span></div>
-        <div class="ex-item"><span class="ex-name">Lat pulldown</span><span class="ex-sets">3 × 10–12</span></div>
-        <div class="ex-item"><span class="ex-name">Cable seated row</span><span class="ex-sets">3 × 10–12</span></div>
-        <div class="ex-item"><span class="ex-name">Face pulls</span><span class="ex-sets">3 × 15</span></div>
-        <div class="ex-item"><span class="ex-name">Hanging leg raises</span><span class="ex-sets">3 × 10</span></div>
-      </div>
-    </div>
+  <div class="sess-main" id="sess-main">
+    <!-- injected -->
   </div>
 
-  <div class="day-card" data-day="5" id="fri">
-    <div class="day-header" onclick="toggle(this)">
-      <div class="day-dot c-hinge">
-        <span class="dname">FRI</span>
-        <span class="dtype">LOWER</span>
-      </div>
-      <div class="day-info">
-        <div class="focus-type focus-hinge">Lower — Hinge</div>
-        <div class="focus-muscles">Hamstrings · Glutes · Core</div>
-      </div>
-      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-    <div class="day-body">
-      <div class="cardio-row">
-        <div class="cardio-dot dot-hinge"></div>
-        <span class="cardio-label">15 min — treadmill stamina routine</span>
-      </div>
-      <div class="exercises">
-        <div class="ex-item"><span class="ex-name">DB Romanian deadlift</span><span class="ex-sets">3 × 10–12</span></div>
-        <div class="ex-item"><span class="ex-name">KB swings</span><span class="ex-sets">3 × 15</span></div>
-        <div class="ex-item"><span class="ex-name">Calf raises</span><span class="ex-sets">3 × 20</span></div>
-        <div class="ex-item"><span class="ex-name">Leg raises</span><span class="ex-sets">3 × 10–12</span></div>
-      </div>
-    </div>
+  <div class="rule"></div>
+
+  <div class="sess-action" id="sess-action">
+    <!-- injected -->
   </div>
 
-  <div class="day-card" data-day="6" id="sat">
-    <div class="day-header" onclick="toggle(this)">
-      <div class="day-dot c-rest">
-        <span class="dname">SAT</span>
-        <span class="dtype">REST</span>
-      </div>
-      <div class="day-info">
-        <div class="focus-type" style="color:var(--subtext)">Optional</div>
-        <div class="focus-muscles">Easy outdoor run or full rest</div>
-      </div>
-      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-    <div class="day-body">
-      <div class="rest-label">Zone 2 run · 30–45 min · or do nothing.</div>
-    </div>
+  <div class="sess-log" id="sess-log">
+    <!-- injected -->
   </div>
 
-  <div class="day-card" data-day="0" id="sun">
-    <div class="day-header" onclick="toggle(this)">
-      <div class="day-dot c-rest">
-        <span class="dname">SUN</span>
-        <span class="dtype">REST</span>
-      </div>
-      <div class="day-info">
-        <div class="focus-type" style="color:var(--subtext)">Full rest</div>
-        <div class="focus-muscles">Recover · walk · do nothing</div>
-      </div>
-      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-    <div class="day-body">
-      <div class="rest-label">Full rest day. No guilt.</div>
-    </div>
+  <div class="sess-footer">
+    <button class="end-btn" onclick="resetSession()">[ End Session — Reset ]</button>
   </div>
-
 </div>
 
 <script>
-  function toggle(header) {
-    const card = header.closest('.day-card');
-    card.classList.toggle('open');
+const SESSIONS={
+  1:{name:'Push + Core',day:'Monday',accent:'#3D8EF0',segments:[
+    {name:'Treadmill stamina run',detail:'15 min · sprints + jog + walk'},
+    {name:'DB bench press',detail:'3 × 10–12'},
+    {name:'DB shoulder press',detail:'3 × 10–12'},
+    {name:'Cable chest fly',detail:'3 × 12–15'},
+    {name:'Tricep pushdown',detail:'3 × 12–15'},
+    {name:'Plank hold',detail:'3 × 45s'},
+  ]},
+  2:{name:'Lower — Quad',day:'Tuesday',accent:'#6DC04E',segments:[
+    {name:'Treadmill leg routine',detail:'15 min · incline + sprints'},
+    {name:'KB goblet squat',detail:'3 × 12'},
+    {name:'Leg press',detail:'3 × 12–15'},
+    {name:'Bulgarian split squat',detail:'3 × 8 each side'},
+    {name:'Calf raises',detail:'3 × 20'},
+  ]},
+  3:{name:'Cardio Day',day:'Wednesday',accent:'#22C98A',segments:[
+    {name:'Spin bike',detail:'30 min · Zone 2 pace'},
+    {name:'Stretch + mobility',detail:'10–15 min'},
+  ]},
+  4:{name:'Pull + Core',day:'Thursday',accent:'#9B8FFF',segments:[
+    {name:'Treadmill stamina run',detail:'15 min · sprints + jog + walk'},
+    {name:'Pull-ups',detail:'3 × 5–7'},
+    {name:'Lat pulldown',detail:'3 × 10–12'},
+    {name:'Cable seated row',detail:'3 × 10–12'},
+    {name:'Face pulls',detail:'3 × 15'},
+    {name:'Hanging leg raises',detail:'3 × 10'},
+  ]},
+  5:{name:'Lower — Hinge',day:'Friday',accent:'#F0804A',segments:[
+    {name:'Treadmill stamina run',detail:'15 min · sprints + jog + walk'},
+    {name:'DB Romanian deadlift',detail:'3 × 10–12'},
+    {name:'KB swings',detail:'3 × 15'},
+    {name:'Calf raises',detail:'3 × 20'},
+    {name:'Leg raises',detail:'3 × 10–12'},
+  ]},
+};
+
+let state={dayKey:null,segIdx:0,sessionStart:0,segStart:0,
+  log:[],ticker:null,totalTicker:null};
+
+function fmt(ms){
+  const s=Math.floor(ms/1000),m=Math.floor(s/60);
+  return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+}
+
+function scanFlash(){
+  const el=document.getElementById('scanFlash');
+  el.classList.remove('active');
+  void el.offsetWidth;
+  el.classList.add('active');
+  setTimeout(()=>el.classList.remove('active'),500);
+}
+
+function startSession(dayKey){
+  const sess=SESSIONS[dayKey];
+  state={dayKey,segIdx:0,sessionStart:Date.now(),segStart:Date.now(),
+    log:[],ticker:null,totalTicker:null};
+
+  document.getElementById('sess-name').textContent=sess.name;
+  document.getElementById('sess-day').textContent=sess.day;
+  document.getElementById('plan-view').style.display='none';
+
+  const sv=document.getElementById('session-view');
+  sv.classList.add('active');
+  sv.style.setProperty('--accent',sess.accent);
+
+  renderSegment(false);
+  state.ticker=setInterval(()=>{
+    const el=document.getElementById('seg-timer');
+    if(el) el.textContent=fmt(Date.now()-state.segStart);
+  },500);
+  state.totalTicker=setInterval(()=>{
+    document.getElementById('sess-total').textContent=fmt(Date.now()-state.sessionStart);
+  },500);
+}
+
+function renderSegment(animate){
+  const sess=SESSIONS[state.dayKey];
+  const seg=sess.segments[state.segIdx];
+  const isLast=state.segIdx===sess.segments.length-1;
+  const accent=sess.accent;
+
+  const main=document.getElementById('sess-main');
+  const action=document.getElementById('sess-action');
+  const log=document.getElementById('sess-log');
+
+  if(animate){
+    main.classList.add('glitch-exit');
+    setTimeout(()=>{
+      main.classList.remove('glitch-exit');
+      injectSegment(main,seg,state.segIdx,sess.segments.length,accent);
+      main.classList.add('glitch-enter');
+      setTimeout(()=>main.classList.remove('glitch-enter'),400);
+    },180);
+  } else {
+    injectSegment(main,seg,state.segIdx,sess.segments.length,accent);
+    if(animate!==false) main.classList.add('glitch-enter');
+    setTimeout(()=>main.classList.remove('glitch-enter'),400);
   }
 
-  function openToday() {
-    const day = new Date().getDay();
-    const card = document.querySelector(`.day-card[data-day="${day}"]`);
-    if (card) {
-      card.classList.add('open');
-      const badge = document.createElement('span');
-      badge.className = 'today-badge';
-      badge.textContent = 'Today';
-      card.querySelector('.day-info').appendChild(badge);
-    }
-  }
+  action.innerHTML=`<button class="next-btn${isLast?' last':''}" onclick="nextSegment()">
+    ${isLast?'[ Done — Finish Session ]':'[ Done — Next Exercise ]'}
+  </button>`;
 
-  openToday();
+  renderLog(log);
+}
+
+function injectSegment(el,seg,idx,total,accent){
+  el.innerHTML=`
+    <div class="seg-now">Now</div>
+    <div class="seg-name">${seg.name}</div>
+    <div class="seg-detail">${seg.detail}</div>
+    <div class="seg-timer" id="seg-timer" style="text-shadow:0 0 40px ${accent}55">00:00</div>
+    <div class="seg-progress">${idx+1} / ${total}</div>
+  `;
+}
+
+function renderLog(el){
+  if(state.log.length===0){el.innerHTML='';return;}
+  el.innerHTML=`<div class="log-header">// Completed</div>
+    <div class="log-list">${
+      state.log.map(l=>`<div class="log-item">
+        <span class="log-name">${l.name}</span>
+        <span class="log-time">${l.time}</span>
+      </div>`).join('')
+    }</div>`;
+}
+
+function nextSegment(){
+  const sess=SESSIONS[state.dayKey];
+  state.log.push({
+    name:sess.segments[state.segIdx].name,
+    time:fmt(Date.now()-state.segStart)
+  });
+  if(state.segIdx===sess.segments.length-1){
+    finishSession();return;
+  }
+  state.segIdx++;
+  state.segStart=Date.now();
+  scanFlash();
+  renderSegment(true);
+}
+
+function finishSession(){
+  clearInterval(state.ticker);
+  const totalTime=fmt(Date.now()-state.sessionStart);
+  const sess=SESSIONS[state.dayKey];
+  const logItems=state.log.map(l=>`
+    <div class="log-item">
+      <span class="log-name">${l.name}</span>
+      <span class="log-time">${l.time}</span>
+    </div>`).join('');
+
+  scanFlash();
+
+  document.getElementById('sess-main').innerHTML=`
+    <div class="complete-eyebrow">Complete</div>
+    <div class="complete-title">${sess.name}</div>
+    <div class="complete-time" style="text-shadow:0 0 50px ${sess.accent}66">${totalTime}</div>
+    <div class="complete-sub">Total session time</div>
+  `;
+  document.getElementById('sess-action').innerHTML='';
+  document.getElementById('sess-log').innerHTML=`
+    <div class="log-header">// Breakdown</div>
+    <div class="log-list">${logItems}</div>
+  `;
+}
+
+function resetSession(){
+  clearInterval(state.ticker);
+  clearInterval(state.totalTicker);
+  state={dayKey:null,segIdx:0,sessionStart:0,segStart:0,log:[],ticker:null,totalTicker:null};
+  document.getElementById('session-view').classList.remove('active');
+  document.getElementById('session-view').style.removeProperty('--accent');
+  document.getElementById('plan-view').style.display='block';
+  document.getElementById('sess-total').textContent='00:00';
+}
+
+function toggleCard(header){
+  const card=header.closest('.day-card');
+  const body=card.querySelector('.day-body');
+  const isOpen=card.classList.contains('open');
+
+  if(isOpen){
+    body.style.height=body.scrollHeight+'px';
+    requestAnimationFrame(()=>{
+      body.style.transition='height 0.3s cubic-bezier(0.4,0,0.2,1)';
+      requestAnimationFrame(()=>{body.style.height='0'});
+    });
+    setTimeout(()=>{body.style.height='';body.style.transition=''},320);
+    card.classList.remove('open');
+  } else {
+    card.classList.add('open');
+    body.style.height='0';
+    body.style.transition='height 0.32s cubic-bezier(0.4,0,0.2,1)';
+    requestAnimationFrame(()=>{
+      body.style.height=body.scrollHeight+'px';
+      setTimeout(()=>{body.style.height='auto';body.style.transition=''},340);
+    });
+    card.classList.add('pulse');
+    setTimeout(()=>card.classList.remove('pulse'),500);
+  }
+}
+
+(function openToday(){
+  const day=new Date().getDay();
+  const card=document.querySelector(`.day-card[data-day="${day}"]`);
+  if(card){
+    const nameEl=card.querySelector('.day-name');
+    const badge=document.createElement('span');
+    badge.className='today-tag';
+    badge.textContent='Today';
+    nameEl.appendChild(badge);
+    toggleCard(card.querySelector('.day-header'));
+  }
+})();
 </script>
 </body>
 </html>
